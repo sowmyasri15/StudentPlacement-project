@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Placement Tracker</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 10px;
+      background-color: #f7f7f7;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    input, select, button {
+      padding: 8px;
+      margin: 5px 2px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      background-color: white;
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    li button {
+      margin-left: 5px;
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    #filterBtn {
+      background-color: #2196F3;
+    }
+
+    #filterBtn:hover {
+      background-color: #1976D2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Student Placement Tracker</h1>
+
+  <input type="text" id="name" placeholder="Student Name">
+  <input type="text" id="roll" placeholder="Roll Number">
+  <input type="text" id="course" placeholder="Course">
+  <select id="status">
+    <option value="Not Placed">Not Placed</option>
+    <option value="Placed">Placed</option>
+  </select>
+  <button onclick="addStudent()">Add Student</button>
+
+  <h2>Filter Students</h2>
+  <select id="filter">
+    <option value="All">All</option>
+    <option value="Placed">Placed</option>
+    <option value="Not Placed">Not Placed</option>
+  </select>
+  <button id="filterBtn" onclick="applyFilter()">Apply Filter</button>
+
+  <h2>Student List</h2>
+  <ul id="studentList"></ul>
+  
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsPUxIa0a86bTb5tB05MNAjONih1HXUyY",
+      authDomain: "student-management-syste-44534.firebaseapp.com",
+      databaseURL: "https://student-management-syste-44534-default-rtdb.firebaseio.com",
+      projectId: "student-management-syste-44534",
+      storageBucket: "student-management-syste-44534.firebasestorage.app",
+      messagingSenderId: "242646790384",
+      appId: "1:242646790384:web:04777df1658b0e6df51235",
+      measurementId: "G-Z3SRNEJ6KZ"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const studentList = document.getElementById('studentList');
+    let studentsData = {};
+
+    function addStudent() {
+      const name = document.getElementById('name').value;
+      const roll = document.getElementById('roll').value;
+      const course = document.getElementById('course').value;
+      const status = document.getElementById('status').value;
+
+      if(name && roll && course){
+        db.ref('students/' + roll).set({ name, roll, course, status });
+        document.getElementById('name').value = '';
+        document.getElementById('roll').value = '';
+        document.getElementById('course').value = '';
+      } else {
+        alert('Please fill all fields');
+      }
+    }
+
+    // Display students in real-time
+    db.ref('students').on('value', snapshot => {
+      studentsData = snapshot.val() || {};
+      displayStudents('All');
+    });
+
+    function displayStudents(filter) {
+      studentList.innerHTML = '';
+      for(let roll in studentsData){
+        const student = studentsData[roll];
+        if(filter === 'All' || student.status === filter){
+          const li = document.createElement('li');
+          li.innerHTML = `
+            ${student.roll} - ${student.name} - ${student.course} - ${student.status} 
+            <button onclick="editStudent('${roll}','${student.name}','${student.course}','${student.status}')">Edit</button>
+            <button onclick="deleteStudent('${roll}')">Delete</button>
+          `;
+          studentList.appendChild(li);
+        }
+      }
+    }
+
+    function editStudent(roll, name, course, status){
+      const newName = prompt("Enter Name:", name);
+      const newCourse = prompt("Enter Course:", course);
+      const newStatus = prompt("Enter Status (Placed/Not Placed):", status);
+      db.ref('students/' + roll).update({ name: newName, course: newCourse, status: newStatus });
+    }
+
+    function deleteStudent(roll){
+      db.ref('students/' + roll).remove();
+    }
+
+    function applyFilter() {
+      const filterValue = document.getElementById('filter').value;
+      displayStudents(filterValue);
+    }
+  </script>
+</body>
+</html>
+
